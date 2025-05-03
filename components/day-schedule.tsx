@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -225,7 +227,15 @@ export function DaySchedule({ day }: { day: number }) {
     router.push(`/schedule/${selectedDay}`)
   }
 
-  // Generate time slots for the schedule (30-minute intervals)
+  // Handle synchronized scrolling
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const timeColumn = document.getElementById("time-column")
+    if (timeColumn) {
+      timeColumn.scrollTop = e.currentTarget.scrollTop
+    }
+  }
+
+  // Generate time slots for the schedule (30-minute intervals) - full 24 hours
   const timeSlots = Array.from({ length: 48 }, (_, i) => {
     const hour = Math.floor(i / 2)
     const minute = i % 2 === 0 ? "00" : "30"
@@ -397,95 +407,104 @@ export function DaySchedule({ day }: { day: number }) {
             ))}
           </TabsList>
           <TabsContent value={day.toString()} className="mt-4">
-            <div className="flex h-[70vh] border rounded-md">
-              {/* Time column */}
-              <div className="w-[80px] text-xl font-normal bg-gray-50 border-r">
-                {timeSlots.map((time, index) => (
-                  <div
-                    key={index}
-                    id={`time-${time}`}
-                    className={`h-12 flex items-center justify-center ${
-                      index % 2 === 0 ? "border-b border-gray-200" : ""
-                    }`}
-                  >
-                    {index % 2 === 0 && <span>{time.split(":")[0]}:00</span>}
+            <div className="flex h-[60vh] border rounded-md overflow-hidden">
+              {/* Wrapper div for synchronized scrolling */}
+              <div className="flex w-full">
+                {/* Time column - now in a container with hidden overflow */}
+                <div id="time-column" className="w-[80px] text-xl font-normal bg-gray-50 border-r overflow-hidden">
+                  <div className="h-full">
+                    {timeSlots.map((time, index) => (
+                      <div
+                        key={index}
+                        id={`time-${time}`}
+                        className={`h-12 flex items-center justify-center ${
+                          index % 2 === 0 ? "border-b border-gray-200" : ""
+                        }`}
+                      >
+                        {index % 2 === 0 && <span>{time.split(":")[0]}:00</span>}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
 
-              {/* Events column */}
-              <div ref={scrollContainerRef} className="w-full bg-white p-2 overflow-y-auto relative">
-                {timeSlots.map((time, index) => {
-                  const eventsForSlot = getEventsForTimeSlot(time)
-                  return (
-                    <div key={index} className={`h-12 relative ${index % 2 === 0 ? "border-t border-gray-200" : ""}`}>
-                      {eventsForSlot.map((event) => {
-                        // Find the member who paid
-                        const payer = members.find((m) => m.id === event.paidBy)?.name || ""
+                {/* Events column - with onScroll handler */}
+                <div
+                  ref={scrollContainerRef}
+                  className="w-full bg-white p-2 overflow-y-auto relative"
+                  onScroll={handleScroll}
+                >
+                  {timeSlots.map((time, index) => {
+                    const eventsForSlot = getEventsForTimeSlot(time)
+                    return (
+                      <div key={index} className={`h-12 relative ${index % 2 === 0 ? "border-t border-gray-200" : ""}`}>
+                        {eventsForSlot.map((event) => {
+                          // Find the member who paid
+                          const payer = members.find((m) => m.id === event.paidBy)?.name || ""
 
-                        // Only render at the start time
-                        if (event.startTime === time) {
-                          // Calculate duration in 30-minute blocks
-                          const [startHour, startMinute] = event.startTime.split(":").map(Number)
-                          const [endHour, endMinute] = event.endTime.split(":").map(Number)
-                          const startMinutes = startHour * 60 + startMinute
-                          const endMinutes = endHour * 60 + endMinute
-                          const durationBlocks = Math.ceil((endMinutes - startMinutes) / 30)
+                          // Only render at the start time
+                          if (event.startTime === time) {
+                            // Calculate duration in 30-minute blocks
+                            const [startHour, startMinute] = event.startTime.split(":").map(Number)
+                            const [endHour, endMinute] = event.endTime.split(":").map(Number)
+                            const startMinutes = startHour * 60 + startMinute
+                            const endMinutes = endHour * 60 + endMinute
+                            const durationBlocks = Math.ceil((endMinutes - startMinutes) / 30)
 
-                          return (
-                            <div
-                              key={event.id}
-                              className={`absolute left-2 right-2 ${event.color} p-2 rounded-md shadow-sm overflow-hidden group`}
-                              style={{ height: `${durationBlocks * 3}rem` }}
-                            >
-                              <div className="flex justify-between items-start">
-                                <div className="text-lg font-medium">{event.subject}</div>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 opacity-0 group-hover:opacity-100"
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleEditEvent(event)}>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleDeleteEvent(event.id)}
-                                      className="text-red-600"
-                                    >
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                            return (
+                              <div
+                                key={event.id}
+                                className={`absolute left-2 right-2 ${event.color} p-2 rounded-md shadow-sm overflow-hidden group`}
+                                style={{ height: `${durationBlocks * 3}rem` }}
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div className="text-lg font-medium">{event.subject}</div>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 opacity-0 group-hover:opacity-100"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleEditEvent(event)}>Edit</DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => handleDeleteEvent(event.id)}
+                                        className="text-red-600"
+                                      >
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                                <div className="text-sm">
+                                  {event.startTime}〜{event.endTime}
+                                </div>
+                                {event.url && (
+                                  <a
+                                    href={event.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm flex items-center text-blue-600 hover:underline"
+                                  >
+                                    URL <ExternalLink className="h-3 w-3 ml-1" />
+                                  </a>
+                                )}
+                                <div className="text-sm flex justify-between mt-1">
+                                  <span>支払い：{payer}</span>
+                                  {event.amount > 0 && <span>¥{event.amount.toLocaleString()}</span>}
+                                </div>
                               </div>
-                              <div className="text-sm">
-                                {event.startTime}〜{event.endTime}
-                              </div>
-                              {event.url && (
-                                <a
-                                  href={event.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sm flex items-center text-blue-600 hover:underline"
-                                >
-                                  URL <ExternalLink className="h-3 w-3 ml-1" />
-                                </a>
-                              )}
-                              <div className="text-sm flex justify-between mt-1">
-                                <span>支払い：{payer}</span>
-                                {event.amount > 0 && <span>¥{event.amount.toLocaleString()}</span>}
-                              </div>
-                            </div>
-                          )
-                        }
-                        return null
-                      })}
-                    </div>
-                  )
-                })}
+                            )
+                          }
+                          return null
+                        })}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -503,73 +522,87 @@ export function DaySchedule({ day }: { day: number }) {
             </Button>
           </div>
 
-          <div className="flex border rounded-md h-[70vh]">
-            {/* Time column */}
-            <div className="w-1/3 text-2xl font-normal bg-gray-50 border-r">
-              {timeSlots.map((time, index) => (
-                <div
-                  key={index}
-                  id={`time-mobile-${time}`}
-                  className={`h-24 flex items-center justify-center ${
-                    index % 2 === 0 ? "border-b border-gray-200" : ""
-                  }`}
-                >
-                  {index % 2 === 0 && <span>{time.split(":")[0]}:00</span>}
+          <div className="flex border rounded-md h-[60vh] overflow-hidden">
+            {/* Mobile view with synchronized scrolling */}
+            <div className="flex w-full">
+              {/* Time column */}
+              <div id="time-column-mobile" className="w-1/3 text-2xl font-normal bg-gray-50 border-r overflow-hidden">
+                <div className="h-full">
+                  {timeSlots.map((time, index) => (
+                    <div
+                      key={index}
+                      id={`time-mobile-${time}`}
+                      className={`h-24 flex items-center justify-center ${
+                        index % 2 === 0 ? "border-b border-gray-200" : ""
+                      }`}
+                    >
+                      {index % 2 === 0 && <span>{time.split(":")[0]}:00</span>}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
 
-            {/* Events column */}
-            <div ref={scrollContainerRef} className="w-2/3 bg-white p-2 overflow-y-auto relative">
-              {timeSlots.map((time, index) => {
-                const eventsForSlot = getEventsForTimeSlot(time)
-                return (
-                  <div key={index} className={`h-24 relative ${index % 2 === 0 ? "border-t border-gray-200" : ""}`}>
-                    {eventsForSlot.map((event) => {
-                      // Find the member who paid
-                      const payer = members.find((m) => m.id === event.paidBy)?.name || ""
+              {/* Events column */}
+              <div
+                ref={scrollContainerRef}
+                className="w-2/3 bg-white p-2 overflow-y-auto relative"
+                onScroll={(e) => {
+                  const timeColumn = document.getElementById("time-column-mobile")
+                  if (timeColumn) {
+                    timeColumn.scrollTop = e.currentTarget.scrollTop
+                  }
+                }}
+              >
+                {timeSlots.map((time, index) => {
+                  const eventsForSlot = getEventsForTimeSlot(time)
+                  return (
+                    <div key={index} className={`h-24 relative ${index % 2 === 0 ? "border-t border-gray-200" : ""}`}>
+                      {eventsForSlot.map((event) => {
+                        // Find the member who paid
+                        const payer = members.find((m) => m.id === event.paidBy)?.name || ""
 
-                      // Only render at the start time
-                      if (event.startTime === time) {
-                        // Calculate duration in 30-minute blocks
-                        const [startHour, startMinute] = event.startTime.split(":").map(Number)
-                        const [endHour, endMinute] = event.endTime.split(":").map(Number)
-                        const startMinutes = startHour * 60 + startMinute
-                        const endMinutes = endHour * 60 + endMinute
-                        const durationBlocks = Math.ceil((endMinutes - startMinutes) / 30)
+                        // Only render at the start time
+                        if (event.startTime === time) {
+                          // Calculate duration in 30-minute blocks
+                          const [startHour, startMinute] = event.startTime.split(":").map(Number)
+                          const [endHour, endMinute] = event.endTime.split(":").map(Number)
+                          const startMinutes = startHour * 60 + startMinute
+                          const endMinutes = endHour * 60 + endMinute
+                          const durationBlocks = Math.ceil((endMinutes - startMinutes) / 30)
 
-                        return (
-                          <div
-                            key={event.id}
-                            className={`absolute left-2 right-2 ${event.color} p-2 rounded-md shadow-sm overflow-hidden`}
-                            style={{ height: `${durationBlocks * 6}rem` }}
-                            onClick={() => handleEditEvent(event)}
-                          >
-                            <div className="text-xl font-medium">{event.subject}</div>
-                            <div>
-                              {event.startTime}〜{event.endTime}
+                          return (
+                            <div
+                              key={event.id}
+                              className={`absolute left-2 right-2 ${event.color} p-2 rounded-md shadow-sm overflow-hidden`}
+                              style={{ height: `${durationBlocks * 6}rem` }}
+                              onClick={() => handleEditEvent(event)}
+                            >
+                              <div className="text-xl font-medium">{event.subject}</div>
+                              <div>
+                                {event.startTime}〜{event.endTime}
+                              </div>
+                              {event.url && <div className="truncate">URL: {event.url}</div>}
+                              <div className="flex justify-between mt-1">
+                                <span>支払い：{payer}</span>
+                                {event.amount > 0 && <span>¥{event.amount.toLocaleString()}</span>}
+                              </div>
                             </div>
-                            {event.url && <div className="truncate">URL: {event.url}</div>}
-                            <div className="flex justify-between mt-1">
-                              <span>支払い：{payer}</span>
-                              {event.amount > 0 && <span>¥{event.amount.toLocaleString()}</span>}
-                            </div>
-                          </div>
-                        )
-                      }
-                      return null
-                    })}
-                  </div>
-                )
-              })}
+                          )
+                        }
+                        return null
+                      })}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Enhanced Expenses Summary */}
-      <div className="mt-8 space-y-4">
-        <h2 className="text-xl font-semibold">Expense Summary</h2>
+      {/* Expense Summary Footer - Positioned at the bottom */}
+      <div className="mt-8 pt-4 border-t">
+        <h2 className="text-xl font-semibold mb-4">Expense Summary</h2>
         <Card className="overflow-hidden">
           <div className="bg-gray-50 p-4 border-b">
             <div className="grid grid-cols-4 gap-4 font-medium">
