@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Trash2, Loader2 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
-import { generateRandomId } from "@/lib/utils"
 
 type Member = {
   id: string
@@ -32,12 +31,12 @@ export function RoomSettingsForm() {
   const [roomId, setRoomId] = useState("")
   const [password, setPassword] = useState("")
   const [members, setMembers] = useState<Member[]>([
-    { id: "1", name: "アキヒロ" },
-    { id: "2", name: "チヒロ" },
-    { id: "3", name: "ショウゴ" },
+    { id: "1", name: "A" },
+    { id: "2", name: "B" },
+    { id: "3", name: "C" },
   ])
   const [days, setDays] = useState(3)
-  const [roomName, setRoomName] = useState("Tokyo Trip")
+  const [roomName, setRoomName] = useState("Trip")
   const router = useRouter()
 
   useEffect(() => {
@@ -56,11 +55,10 @@ export function RoomSettingsForm() {
         setMembers(currentRoom.members)
       }
     } else {
-      // Generate new room ID and password for new rooms
-      setRoomId(generateRandomId(6))
-      setPassword(generateRandomId(6))
+        setIsNewRoom(true)
     }
   }, [])
+
 
   const addMember = () => {
     const newId = (members.length + 1).toString()
@@ -151,12 +149,12 @@ export function RoomSettingsForm() {
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="roomId">Room ID</Label>
-              <Input id="roomId" value={roomId} readOnly className="bg-gray-50" />
+              {isNewRoom ? (<Input id="roomId" value={roomId} onChange={(e) => setRoomId(e.target.value)} placeholder= "e.g. trip_2025_5" required/>):(<Input id="roomId" value={roomId} className="bg-gray-50" readOnly/>)}
               <p className="text-xs text-gray-500">Share this ID with your travel companions</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" value={password} readOnly className="bg-gray-50" />
+              <Input id="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder= "e.g. trip_pass" required/>
               <p className="text-xs text-gray-500">Keep this password secure</p>
             </div>
           </div>
