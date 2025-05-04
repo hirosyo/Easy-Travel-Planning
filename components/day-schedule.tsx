@@ -79,8 +79,15 @@ export function DaySchedule({ day }: { day: number }) {
     members: Member[]
     balances: Record<string, Record<string, number>>
   }) => {
-    const getTotalToPay = (payerId: string) => {
-      return Object.values(balances[payerId] || {}).reduce((sum, val) => sum + val, 0)
+    const getNetBalance = (memberId: string) => {
+      const toReceive = members.reduce((sum, other) => {
+        if (other.id !== memberId) {
+          return sum + (balances[other.id]?.[memberId] || 0)
+        }
+        return sum
+      }, 0)
+      const toPay = Object.values(balances[memberId] || {}).reduce((sum, val) => sum + val, 0)
+      return toReceive - toPay
     }
 
     return (
@@ -88,13 +95,12 @@ export function DaySchedule({ day }: { day: number }) {
         <table className="min-w-full text-sm">
           <thead className="bg-gray-100">
             <tr>
-              <th className="p-2 border">支払う人＼受け取る人</th>
+              <th className="p-2 border">Payer/Receiver</th>
               {members.map((m) => (
                 <th key={m.id} className="p-2 border text-center">
                   {m.name}
                 </th>
               ))}
-              <th className="p-2 border text-center">合計支払額</th>
             </tr>
           </thead>
           <tbody>
@@ -110,13 +116,29 @@ export function DaySchedule({ day }: { day: number }) {
                       : ""}
                   </td>
                 ))}
-                <td className="p-2 border text-right font-semibold">
-                  ¥{getTotalToPay(payer.id).toLocaleString()}
-                </td>
+
               </tr>
             ))}
           </tbody>
         </table>
+        <div className="mt-4 space-y-2">
+  {members.map((member) => {
+    const receive = Object.values(balances)
+      .map((row) => row[member.id] || 0)
+      .reduce((a, b) => a + b, 0)
+    const pay = Object.values(balances[member.id] || {})
+      .reduce((a, b) => a + b, 0)
+    const net = receive - pay
+    const color = net > 0 ? "text-green-600" : net < 0 ? "text-red-600" : "text-gray-700"
+
+    return (
+      <div key={member.id} className="text-sm">
+        {member.name} の合計収支：<span className={`font-semibold ${color}`}>¥{net.toLocaleString()}</span>
+      </div>
+    )
+  })}
+</div>
+
       </div>
     )
   }
