@@ -280,8 +280,12 @@ export function DaySchedule({ day }: { day: number }) {
     return expenses
   }
 
-  const expenses = calculateExpenses()
+  const goToToppage = () => {
+    localStorage.setItem("currentRoomId", "")
+    router.push("/")
+  }
 
+  const expenses = calculateExpenses()
 
   return (
     <div className="space-y-4">
@@ -299,7 +303,7 @@ export function DaySchedule({ day }: { day: number }) {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                追加
+                Add
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -348,6 +352,7 @@ export function DaySchedule({ day }: { day: number }) {
                       <SelectValue placeholder="Select member" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="free">Free</SelectItem>
                       {members.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
                           {member.name}
@@ -425,7 +430,6 @@ export function DaySchedule({ day }: { day: number }) {
                     ))}
                   </div>
                 </div>
-
                 {/* Events column - with onScroll handler */}
                 <div
                   ref={scrollContainerRef}
@@ -481,17 +485,17 @@ export function DaySchedule({ day }: { day: number }) {
                                 <div className="text-sm">
                                   {event.startTime}〜{event.endTime}
                                 </div>
-                                {event.url && (
-                                  <a
+                                <div className="relative z-10">
+                                  {event.url && <a
+                                    className="truncate text-blue-600"
                                     href={event.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm flex items-center text-blue-600 hover:underline"
                                   >
-                                    URL <ExternalLink className="h-3 w-3 ml-1" />
-                                  </a>
-                                )}
-                                <div className="text-sm flex justify-between mt-1">
+                                    {event.url}
+                                  </a>}
+                                </div>
+                                <div className="text-sm flex justify-between mt-1 z-10">
                                   <span>支払い：{payer}</span>
                                   {event.amount > 0 && <span>¥{event.amount.toLocaleString()}</span>}
                                 </div>
@@ -578,8 +582,17 @@ export function DaySchedule({ day }: { day: number }) {
                               <div>
                                 {event.startTime}〜{event.endTime}
                               </div>
-                              {event.url && <div className="truncate">URL: {event.url}</div>}
-                              <div className="flex justify-between mt-1">
+                              <div className="relative z-10">
+                                  {event.url && <a
+                                    className="truncate text-blue-600"
+                                    href={event.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    URL
+                                  </a>}
+                                </div>
+                              <div className="flex justify-between mt-1 z-10">
                                 <span>支払い：{payer}</span>
                                 {event.amount > 0 && <span>¥{event.amount.toLocaleString()}</span>}
                               </div>
@@ -649,6 +662,9 @@ export function DaySchedule({ day }: { day: number }) {
             </div>
           </div>
         </Card>
+      </div>
+      <div className = "flex justify-end pr-2">
+        <button onClick={goToToppage} className = "text-gray-100 bg-gray-900 font-normal px-2 py-1 text-lg">Exit ⇒</button>
       </div>
     </div>
   )
