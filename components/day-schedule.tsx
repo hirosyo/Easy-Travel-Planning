@@ -38,6 +38,7 @@ type Room = {
   name: string
   days: number
   members: Member[]
+  date: string //日付のプロパティ
 }
 
 const EVENT_COLORS = [
@@ -54,6 +55,7 @@ export function DaySchedule({ day }: { day: number }) {
   const [events, setEvents] = useState<ScheduleEvent[]>([])
   const [members, setMembers] = useState<Member[]>([])
   const [totalDays, setTotalDays] = useState(3)
+  const [selectedDate, setSelectedDate] = useState<Date>()
   const [roomName, setRoomName] = useState("")
   const [roomId, setRoomId] = useState("")
   const [isAddEventOpen, setIsAddEventOpen] = useState(false)
@@ -95,6 +97,7 @@ export function DaySchedule({ day }: { day: number }) {
       setMembers(currentRoom.members)
       setTotalDays(currentRoom.days)
       setRoomName(currentRoom.name)
+      setSelectedDate(currentRoom.date)
 
       // Load events for this day
       const savedEvents = localStorage.getItem(`events_${currentRoomId}_day_${day}`)
@@ -287,6 +290,7 @@ export function DaySchedule({ day }: { day: number }) {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">{roomName}</h1>
+          <h2 className="text-xl font-semibold text-gray-600">{selectedDate}~</h2>
           <h2 className="text-xl font-semibold text-gray-600">Day {day}</h2>
         </div>
         <div className="flex gap-2">
