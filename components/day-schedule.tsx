@@ -265,20 +265,32 @@ export function DaySchedule({ day }: { day: number }) {
   const calculateExpenses = () => {
     const expenses: Record<string, number> = {}
 
-    // Initialize expenses for all members
+    // 各メンバーの初期値を 0 に設定
     members.forEach((member) => {
       expenses[member.id] = 0
     })
 
-    // Sum the amounts for each member
+    // 各イベントに対して処理
     events.forEach((event) => {
-      if (event.paidBy && expenses[event.paidBy] !== undefined) {
-        expenses[event.paidBy] += event.amount || 0
-      }
+      const payerId = event.paidBy
+      const totalAmount = event.amount
+
+      if (!payerId || totalAmount <= 0) return
+
+      const numMembers = members.length
+      const splitAmount = Math.floor(totalAmount / numMembers) // 切り捨てで均等割
+
+      members.forEach((member) => {
+        if (member.id !== payerId) {
+          expenses[member.id] += splitAmount
+        }
+        // 支払った本人（payerId）には加算しない
+      })
     })
 
     return expenses
   }
+
 
   const expenses = calculateExpenses()
 
