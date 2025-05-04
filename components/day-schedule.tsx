@@ -282,6 +282,7 @@ export function DaySchedule({ day }: { day: number }) {
 
   const expenses = calculateExpenses()
 
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -522,19 +523,17 @@ export function DaySchedule({ day }: { day: number }) {
             </Button>
           </div>
 
-          <div className="flex border rounded-md h-[60vh] overflow-hidden">
+          <div className="flex border rounded-md h-[70vh] overflow-hidden">
             {/* Mobile view with synchronized scrolling */}
             <div className="flex w-full">
               {/* Time column */}
-              <div id="time-column-mobile" className="w-1/3 text-2xl font-normal bg-gray-50 border-r overflow-hidden">
+              <div id="time-column-mobile" className="w-1/5 mg:w-1/3 text-xl font-normal bg-gray-50 border-none overflow-hidden">
                 <div className="h-full">
                   {timeSlots.map((time, index) => (
                     <div
                       key={index}
                       id={`time-mobile-${time}`}
-                      className={`h-24 flex items-center justify-center ${
-                        index % 2 === 0 ? "border-b border-gray-200" : ""
-                      }`}
+                      className={`h-24 flex items-center justify-center border-none`}
                     >
                       {index % 2 === 0 && <span>{time.split(":")[0]}:00</span>}
                     </div>
