@@ -290,7 +290,7 @@ export function DaySchedule({ day }: { day: number }) {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">{roomName}</h1>
-          <h2 className="text-xl font-semibold text-gray-600">{selectedDate}~</h2>
+          <h2 className="text-xl font-semibold text-gray-400">{selectedDate}~</h2>
           <h2 className="text-xl font-semibold text-gray-600">Day {day}</h2>
         </div>
         <div className="flex gap-2">
