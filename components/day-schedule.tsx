@@ -418,9 +418,7 @@ export function DaySchedule({ day }: { day: number }) {
                       <div
                         key={index}
                         id={`time-${time}`}
-                        className={`h-12 flex items-center justify-center ${
-                          index % 2 === 0 ? "border-b border-gray-200" : ""
-                        }`}
+                        className={`h-12 flex items-start justify-center`}
                       >
                         {index % 2 === 0 && <span>{time.split(":")[0]}:00</span>}
                       </div>
@@ -533,7 +531,7 @@ export function DaySchedule({ day }: { day: number }) {
                     <div
                       key={index}
                       id={`time-mobile-${time}`}
-                      className={`h-24 flex items-center justify-center border-none`}
+                      className={`h-24 flex items-start justify-center border-none`}
                     >
                       {index % 2 === 0 && <span>{time.split(":")[0]}:00</span>}
                     </div>
