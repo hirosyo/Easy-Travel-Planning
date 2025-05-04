@@ -72,6 +72,55 @@ export function DaySchedule({ day }: { day: number }) {
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  const PaymentMatrix = ({
+    members,
+    balances,
+  }: {
+    members: Member[]
+    balances: Record<string, Record<string, number>>
+  }) => {
+    const getTotalToPay = (payerId: string) => {
+      return Object.values(balances[payerId] || {}).reduce((sum, val) => sum + val, 0)
+    }
+
+    return (
+      <div className="overflow-auto border rounded-md mt-4">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="p-2 border">支払う人＼受け取る人</th>
+              {members.map((m) => (
+                <th key={m.id} className="p-2 border text-center">
+                  {m.name}
+                </th>
+              ))}
+              <th className="p-2 border text-center">合計支払額</th>
+            </tr>
+          </thead>
+          <tbody>
+            {members.map((payer) => (
+              <tr key={payer.id} className="border-t">
+                <td className="p-2 border font-medium">{payer.name}</td>
+                {members.map((receiver) => (
+                  <td key={receiver.id} className="p-2 border text-right">
+                    {payer.id === receiver.id
+                      ? "-"
+                      : balances[payer.id]?.[receiver.id]
+                      ? `¥${balances[payer.id][receiver.id].toLocaleString()}`
+                      : ""}
+                  </td>
+                ))}
+                <td className="p-2 border text-right font-semibold">
+                  ¥{getTotalToPay(payer.id).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
   useEffect(() => {
     // Load room data
     const currentRoomId = localStorage.getItem("currentRoomId")
@@ -291,8 +340,38 @@ export function DaySchedule({ day }: { day: number }) {
     return expenses
   }
 
+  const calculateBalances = (
+    members: Member[],
+    events: ScheduleEvent[]
+  ): Record<string, Record<string, number>> => {
+    const balances: Record<string, Record<string, number>> = {}
+    const memberIds = members.map((m) => m.id)
+
+    // 初期化：各メンバーに対して他メンバーへの支払い額を0で初期化
+    memberIds.forEach((id) => {
+      balances[id] = {}
+      memberIds.forEach((otherId) => {
+        if (id !== otherId) balances[id][otherId] = 0
+      })
+    })
+
+    // イベントごとに支払いを分配
+    events.forEach((event) => {
+      const { paidBy, amount } = event
+      if (!paidBy || amount <= 0) return
+      const perPerson = Math.floor(amount / memberIds.length)
+      memberIds.forEach((id) => {
+        if (id !== paidBy) {
+          balances[id][paidBy] += perPerson
+        }
+      })
+    })
+
+    return balances
+  }
 
   const expenses = calculateExpenses()
+  const balances = calculateBalances(members, events)
 
   return (
     <div className="space-y-4">
@@ -612,59 +691,12 @@ export function DaySchedule({ day }: { day: number }) {
         </div>
       )}
 
-      {/* Expense Summary Footer - Positioned at the bottom */}
-      <div className="mt-8 pt-4 border-t">
-        <h2 className="text-xl font-semibold mb-4">Expense Summary</h2>
-        <Card className="overflow-hidden">
-          <div className="bg-gray-50 p-4 border-b">
-            <div className="grid grid-cols-4 gap-4 font-medium">
-              <div>Member</div>
-              <div className="text-right">Total Paid</div>
-              <div className="text-right">Events</div>
-              <div className="text-right">Average/Event</div>
-            </div>
-          </div>
-          <div className="divide-y">
-            {members.map((member) => {
-              const totalPaid = expenses[member.id] || 0
-              const memberEvents = events.filter((event) => event.paidBy === member.id)
-              const eventCount = memberEvents.length
-              const averagePerEvent = eventCount > 0 ? totalPaid / eventCount : 0
 
-              return (
-                <div key={member.id} className="p-4 hover:bg-gray-50">
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="font-medium">{member.name}</div>
-                    <div className="text-right">¥{totalPaid.toLocaleString()}</div>
-                    <div className="text-right">{eventCount}</div>
-                    <div className="text-right">¥{Math.round(averagePerEvent).toLocaleString()}</div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <div className="bg-blue-300 p-4 border-t">
-            <div className="grid grid-cols-4 gap-4 font-semibold">
-              <div>Total</div>
-              <div className="text-right">
-                ¥
-                {Object.values(expenses)
-                  .reduce((sum, amount) => sum + amount, 0)
-                  .toLocaleString()}
-              </div>
-              <div className="text-right">{events.length}</div>
-              <div className="text-right">
-                ¥
-                {events.length > 0
-                  ? Math.round(
-                      Object.values(expenses).reduce((sum, amount) => sum + amount, 0) / events.length,
-                    ).toLocaleString()
-                  : 0}
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </div>
+  {/* ✅ Payment Matrix はこの中に含めると自然です */}
+  <div className="mt-8 pt-4 border-t">
+    <h2 className="text-xl font-semibold mb-4">Expense Summary</h2>
+    <PaymentMatrix members={members} balances={balances} />
+  </div>
+</div>
   )
 }
