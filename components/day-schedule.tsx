@@ -363,10 +363,17 @@ export function DaySchedule({ day }: { day: number }) {
                   <Label htmlFor="amount">Amount (¥)</Label>
                   <Input
                     id="amount"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={newEvent.amount}
-                    onChange={(e) => setNewEvent({ ...newEvent, amount: Number(e.target.value) })}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      // 数字以外をすべて除去
+                      const digitsOnly = raw.replace(/\D/g, "");
+                      // 空なら 0、それ以外は parseInt
+                      const amount = digitsOnly === "" ? 0 : parseInt(digitsOnly, 10);
+                      setNewEvent(ev => ({ ...ev, amount }));
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
