@@ -5,7 +5,6 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -393,6 +392,8 @@ export function DaySchedule({ day }: { day: number }) {
     })
 
     return balances
+  }
+
   const goToToppage = () => {
     localStorage.setItem("currentRoomId", "")
     router.push("/")
@@ -401,171 +402,285 @@ export function DaySchedule({ day }: { day: number }) {
   const expenses = calculateExpenses()
   const balances = calculateBalances(members, events)
 
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">{roomName}</h1>
-          <h2 className="text-xl font-semibold text-gray-400">{selectedDate}~</h2>
-          <h2 className="text-xl font-semibold text-gray-600">Day {day}</h2>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={goToRoomSettings}>
-            <Settings className="h-4 w-4 mr-2" />
-            Room Settings
-          </Button>
-          <Dialog open={isAddEventOpen} onOpenChange={handleDialogOpenChange}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>{isEditMode ? "Edit Event" : "Add New Event"}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input
-                    id="subject"
-                    value={newEvent.subject}
-                    onChange={(e) => setNewEvent({ ...newEvent, subject: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startTime">Start Time</Label>
-                    <Input
-                      id="startTime"
-                      type="time"
-                      value={newEvent.startTime}
-                      onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input
-                      id="endTime"
-                      type="time"
-                      value={newEvent.endTime}
-                      onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="paidBy">Paid By</Label>
-                  <Select
-                    value={newEvent.paidBy}
-                    onValueChange={(value) => setNewEvent({ ...newEvent, paidBy: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="free">Free</SelectItem>
-                      {members.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount (¥)</Label>
-                  <Input
-                    id="amount"
-                    type="text"
-                    inputMode="numeric"
-                    value={newEvent.amount}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      // 数字以外をすべて除去
-                      const digitsOnly = raw.replace(/\D/g, "");
-                      // 空なら 0、それ以外は parseInt
-                      const amount = digitsOnly === "" ? 0 : parseInt(digitsOnly, 10);
-                      setNewEvent(ev => ({ ...ev, amount }));
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="url">URL (Optional)</Label>
-                  <Input
-                    id="url"
-                    value={newEvent.url}
-                    onChange={(e) => setNewEvent({ ...newEvent, url: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Color</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {EVENT_COLORS.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className={`w-8 h-8 rounded-full ${color} ${
-                          newEvent.color === color ? "ring-2 ring-offset-2 ring-black" : ""
-                        }`}
-                        onClick={() => setNewEvent({ ...newEvent, color })}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <Button className="w-full" onClick={handleAddOrUpdateEvent}>
-                  {isEditMode ? "Update Event" : "Save Event"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
 
-      {isDesktop ? (
-        <Tabs defaultValue={day.toString()} className="w-full">
-          <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(totalDays, 7)}, 1fr)` }}>
-            {dayTabs.map((dayNum) => (
-              <TabsTrigger key={dayNum} value={dayNum.toString()} onClick={() => navigateToDay(dayNum)}>
-                Day {dayNum}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <TabsContent value={day.toString()} className="mt-4">
-            <div className="flex h-[60vh] border rounded-md overflow-hidden">
-              {/* Wrapper div for synchronized scrolling */}
+  return (
+    <div>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">{roomName}</h1>
+            <h2 className="text-xl font-semibold text-gray-400">{selectedDate}~</h2>
+            <h2 className="text-xl font-semibold text-gray-600">Day {day}</h2>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={goToRoomSettings}>
+              <Settings className="h-4 w-4 mr-2" />
+              Room Settings
+            </Button>
+            <Dialog open={isAddEventOpen} onOpenChange={handleDialogOpenChange}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>{isEditMode ? "Edit Event" : "Add New Event"}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Subject</Label>
+                    <Input
+                      id="subject"
+                      value={newEvent.subject}
+                      onChange={(e) => setNewEvent({ ...newEvent, subject: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="startTime">Start Time</Label>
+                      <Input
+                        id="startTime"
+                        type="time"
+                        value={newEvent.startTime}
+                        onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="endTime">End Time</Label>
+                      <Input
+                        id="endTime"
+                        type="time"
+                        value={newEvent.endTime}
+                        onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="paidBy">Paid By</Label>
+                    <Select
+                      value={newEvent.paidBy}
+                      onValueChange={(value) => setNewEvent({ ...newEvent, paidBy: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select member" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free">Free</SelectItem>
+                        {members.map((member) => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Amount (¥)</Label>
+                    <Input
+                      id="amount"
+                      type="text"
+                      inputMode="numeric"
+                      value={newEvent.amount}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        // 数字以外をすべて除去
+                        const digitsOnly = raw.replace(/\D/g, "");
+                        // 空なら 0、それ以外は parseInt
+                        const amount = digitsOnly === "" ? 0 : parseInt(digitsOnly, 10);
+                        setNewEvent(ev => ({ ...ev, amount }));
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="url">URL (Optional)</Label>
+                    <Input
+                      id="url"
+                      value={newEvent.url}
+                      onChange={(e) => setNewEvent({ ...newEvent, url: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Color</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {EVENT_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`w-8 h-8 rounded-full ${color} ${
+                            newEvent.color === color ? "ring-2 ring-offset-2 ring-black" : ""
+                          }`}
+                          onClick={() => setNewEvent({ ...newEvent, color })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <Button className="w-full" onClick={handleAddOrUpdateEvent}>
+                    {isEditMode ? "Update Event" : "Save Event"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+        {isDesktop ? (
+          <Tabs defaultValue={day.toString()} className="w-full">
+            <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(totalDays, 7)}, 1fr)` }}>
+              {dayTabs.map((dayNum) => (
+                <TabsTrigger key={dayNum} value={dayNum.toString()} onClick={() => navigateToDay(dayNum)}>
+                  Day {dayNum}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <TabsContent value={day.toString()} className="mt-4">
+              <div className="flex h-[60vh] border rounded-md overflow-hidden">
+                {/* Wrapper div for synchronized scrolling */}
+                <div className="flex w-full">
+                  {/* Time column - now in a container with hidden overflow */}
+                  <div id="time-column" className="w-[80px] text-xl font-normal bg-gray-50 border-r overflow-hidden">
+                    <div className="h-full">
+                      {timeSlots.map((time, index) => (
+                        <div
+                          key={index}
+                          id={`time-${time}`}
+                          className={`h-12 flex items-start justify-center`}
+                        >
+                          {index % 2 === 0 && <span>{time.split(":")[0]}:00</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Events column - with onScroll handler */}
+                  <div
+                    ref={scrollContainerRef}
+                    className="w-full bg-white p-2 overflow-y-auto relative"
+                    onScroll={handleScroll}
+                  >
+                    {timeSlots.map((time, index) => {
+                      const eventsForSlot = getEventsForTimeSlot(time)
+                      return (
+                        <div key={index} className={`h-12 relative ${index % 2 === 0 ? "border-t border-gray-200" : ""}`}>
+                          {eventsForSlot.map((event) => {
+                            // Find the member who paid
+                            const payer = members.find((m) => m.id === event.paidBy)?.name || ""
+                            // Only render at the start time
+                            if (event.startTime === time) {
+                              // Calculate duration in 30-minute blocks
+                              const [startHour, startMinute] = event.startTime.split(":").map(Number)
+                              const [endHour, endMinute] = event.endTime.split(":").map(Number)
+                              const startMinutes = startHour * 60 + startMinute
+                              const endMinutes = endHour * 60 + endMinute
+                              const durationBlocks = Math.ceil((endMinutes - startMinutes) / 30)
+                              return (
+                                <div
+                                  key={event.id}
+                                  className={`absolute left-2 right-2 ${event.color} p-2 rounded-md shadow-sm overflow-hidden group`}
+                                  style={{ height: `${durationBlocks * 3}rem` }}
+                                >
+                                  <div className="flex justify-between items-start">
+                                    <div className="text-lg font-medium">{event.subject}</div>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 opacity-0 group-hover:opacity-100"
+                                        >
+                                          <Edit className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleEditEvent(event)}>Edit</DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => handleDeleteEvent(event.id)}
+                                          className="text-red-600"
+                                        >
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                  <div className="text-sm">
+                                    {event.startTime}〜{event.endTime}
+                                  </div>
+                                  <div className="relative z-10">
+                                    {event.url && <a
+                                      className="truncate text-blue-600"
+                                      href={event.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      {event.url}
+                                    </a>}
+                                  </div>
+                                  <div className="text-sm flex justify-between mt-1 z-10">
+                                    <span>支払い：{payer}</span>
+                                    {event.amount > 0 && <span>¥{event.amount.toLocaleString()}</span>}
+                                  </div>
+                                </div>
+                              )
+                            }
+                            return null
+                          })}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex justify-between mb-4">
+              <Button variant="outline" disabled={day <= 1} onClick={() => navigateToDay(day - 1)}>
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Day {day - 1}
+              </Button>
+              <Button variant="outline" disabled={day >= totalDays} onClick={() => navigateToDay(day + 1)}>
+                Day {day + 1}
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+            <div className="flex border rounded-md h-[70vh] overflow-hidden">
+              {/* Mobile view with synchronized scrolling */}
               <div className="flex w-full">
-                {/* Time column - now in a container with hidden overflow */}
-                <div id="time-column" className="w-[80px] text-xl font-normal bg-gray-50 border-r overflow-hidden">
+                {/* Time column */}
+                <div id="time-column-mobile" className="w-1/5 md:w-1/3 text-xl font-normal bg-gray-50 border-none overflow-hidden">
                   <div className="h-full">
                     {timeSlots.map((time, index) => (
                       <div
                         key={index}
-                        id={`time-${time}`}
-                        className={`h-12 flex items-start justify-center`}
+                        id={`time-mobile-${time}`}
+                        className={`h-24 flex items-start justify-center border-none`}
                       >
                         {index % 2 === 0 && <span>{time.split(":")[0]}:00</span>}
                       </div>
                     ))}
                   </div>
                 </div>
-                {/* Events column - with onScroll handler */}
+                {/* Events column */}
                 <div
                   ref={scrollContainerRef}
-                  className="w-full bg-white p-2 overflow-y-auto relative"
-                  onScroll={handleScroll}
+                  className="w-2/3 bg-white p-2 overflow-y-auto relative"
+                  onScroll={(e) => {
+                    const timeColumn = document.getElementById("time-column-mobile")
+                    if (timeColumn) {
+                      timeColumn.scrollTop = e.currentTarget.scrollTop
+                    }
+                  }}
                 >
                   {timeSlots.map((time, index) => {
                     const eventsForSlot = getEventsForTimeSlot(time)
                     return (
-                      <div key={index} className={`h-12 relative ${index % 2 === 0 ? "border-t border-gray-200" : ""}`}>
+                      <div key={index} className={`h-24 relative ${index % 2 === 0 ? "border-t border-gray-200" : ""}`}>
                         {eventsForSlot.map((event) => {
                           // Find the member who paid
                           const payer = members.find((m) => m.id === event.paidBy)?.name || ""
-
                           // Only render at the start time
                           if (event.startTime === time) {
                             // Calculate duration in 30-minute blocks
@@ -574,50 +689,28 @@ export function DaySchedule({ day }: { day: number }) {
                             const startMinutes = startHour * 60 + startMinute
                             const endMinutes = endHour * 60 + endMinute
                             const durationBlocks = Math.ceil((endMinutes - startMinutes) / 30)
-
                             return (
                               <div
                                 key={event.id}
-                                className={`absolute left-2 right-2 ${event.color} p-2 rounded-md shadow-sm overflow-hidden group`}
-                                style={{ height: `${durationBlocks * 3}rem` }}
+                                className={`absolute left-2 right-2 ${event.color} p-2 rounded-md shadow-sm overflow-hidden`}
+                                style={{ height: `${durationBlocks * 6}rem` }}
+                                onClick={() => handleEditEvent(event)}
                               >
-                                <div className="flex justify-between items-start">
-                                  <div className="text-lg font-medium">{event.subject}</div>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 opacity-0 group-hover:opacity-100"
-                                      >
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => handleEditEvent(event)}>Edit</DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() => handleDeleteEvent(event.id)}
-                                        className="text-red-600"
-                                      >
-                                        Delete
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </div>
-                                <div className="text-sm">
+                                <div className="text-xl font-medium">{event.subject}</div>
+                                <div>
                                   {event.startTime}〜{event.endTime}
                                 </div>
                                 <div className="relative z-10">
-                                  {event.url && <a
-                                    className="truncate text-blue-600"
-                                    href={event.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    {event.url}
-                                  </a>}
-                                </div>
-                                <div className="text-sm flex justify-between mt-1 z-10">
+                                    {event.url && <a
+                                      className="truncate text-blue-600"
+                                      href={event.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      URL
+                                    </a>}
+                                  </div>
+                                <div className="flex justify-between mt-1 z-10">
                                   <span>支払い：{payer}</span>
                                   {event.amount > 0 && <span>¥{event.amount.toLocaleString()}</span>}
                                 </div>
@@ -632,115 +725,19 @@ export function DaySchedule({ day }: { day: number }) {
                 </div>
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex justify-between mb-4">
-            <Button variant="outline" disabled={day <= 1} onClick={() => navigateToDay(day - 1)}>
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Day {day - 1}
-            </Button>
-            <Button variant="outline" disabled={day >= totalDays} onClick={() => navigateToDay(day + 1)}>
-              Day {day + 1}
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
           </div>
-
-          <div className="flex border rounded-md h-[70vh] overflow-hidden">
-            {/* Mobile view with synchronized scrolling */}
-            <div className="flex w-full">
-              {/* Time column */}
-              <div id="time-column-mobile" className="w-1/5 mg:w-1/3 text-xl font-normal bg-gray-50 border-none overflow-hidden">
-                <div className="h-full">
-                  {timeSlots.map((time, index) => (
-                    <div
-                      key={index}
-                      id={`time-mobile-${time}`}
-                      className={`h-24 flex items-start justify-center border-none`}
-                    >
-                      {index % 2 === 0 && <span>{time.split(":")[0]}:00</span>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Events column */}
-              <div
-                ref={scrollContainerRef}
-                className="w-2/3 bg-white p-2 overflow-y-auto relative"
-                onScroll={(e) => {
-                  const timeColumn = document.getElementById("time-column-mobile")
-                  if (timeColumn) {
-                    timeColumn.scrollTop = e.currentTarget.scrollTop
-                  }
-                }}
-              >
-                {timeSlots.map((time, index) => {
-                  const eventsForSlot = getEventsForTimeSlot(time)
-                  return (
-                    <div key={index} className={`h-24 relative ${index % 2 === 0 ? "border-t border-gray-200" : ""}`}>
-                      {eventsForSlot.map((event) => {
-                        // Find the member who paid
-                        const payer = members.find((m) => m.id === event.paidBy)?.name || ""
-
-                        // Only render at the start time
-                        if (event.startTime === time) {
-                          // Calculate duration in 30-minute blocks
-                          const [startHour, startMinute] = event.startTime.split(":").map(Number)
-                          const [endHour, endMinute] = event.endTime.split(":").map(Number)
-                          const startMinutes = startHour * 60 + startMinute
-                          const endMinutes = endHour * 60 + endMinute
-                          const durationBlocks = Math.ceil((endMinutes - startMinutes) / 30)
-
-                          return (
-                            <div
-                              key={event.id}
-                              className={`absolute left-2 right-2 ${event.color} p-2 rounded-md shadow-sm overflow-hidden`}
-                              style={{ height: `${durationBlocks * 6}rem` }}
-                              onClick={() => handleEditEvent(event)}
-                            >
-                              <div className="text-xl font-medium">{event.subject}</div>
-                              <div>
-                                {event.startTime}〜{event.endTime}
-                              </div>
-                              <div className="relative z-10">
-                                  {event.url && <a
-                                    className="truncate text-blue-600"
-                                    href={event.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    URL
-                                  </a>}
-                                </div>
-                              <div className="flex justify-between mt-1 z-10">
-                                <span>支払い：{payer}</span>
-                                {event.amount > 0 && <span>¥{event.amount.toLocaleString()}</span>}
-                              </div>
-                            </div>
-                          )
-                        }
-                        return null
-                      })}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+        )}
+      
+        {/* ✅ Payment Matrix はこの中に含めると自然です */}
+        <div className="mt-8 pt-4 border-t">
+      <h2 className="text-xl font-semibold mb-4">Expense Summary</h2>
+      <PaymentMatrix members={members} balances={balances} />
         </div>
-      )}
-
-  {/* ✅ Payment Matrix はこの中に含めると自然です */}
-  <div className="mt-8 pt-4 border-t">
-    <h2 className="text-xl font-semibold mb-4">Expense Summary</h2>
-    <PaymentMatrix members={members} balances={balances} />
-  </div>
-</div>
-      <div className = "flex justify-end pr-2">
-        <button onClick={goToToppage} className = "text-gray-100 bg-gray-900 font-normal px-2 py-1 text-lg">Exit ⇒</button>
       </div>
-    </div>
+        <div className = "flex justify-end pr-2">
+          <button onClick={goToToppage} className = "text-gray-100 bg-gray-900 font-normal px-2 py-1 text-lg">Exit ⇒</button>
+        </div>
+      </div>
+    
   )
 }
