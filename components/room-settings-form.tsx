@@ -2,14 +2,17 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, forwardRef, MouseEventHandler } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { format, parse } from "date-fns"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Trash2, Loader2 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
+import { Calendar } from "@/components/ui/calendar"
+
 
 type Member = {
   id: string
@@ -23,7 +26,22 @@ type Room = {
   days: number
   members: Member[]
   created: number
+  date: string  //日付のプロパティ
 }
+
+// カレンダー開閉用のカスタム input
+const CalendarInput = forwardRef<HTMLInputElement, { value?: string; onClick?: MouseEventHandler<HTMLInputElement> }>(
+  ({ value, onClick }, ref) => (
+    <Input
+      ref={ref}
+      value={value}
+      readOnly
+      onClick={onClick}
+      placeholder="YYYY/MM/DD"
+    />
+  )
+)
+CalendarInput.displayName = "CalendarInput"
 
 export function RoomSettingsForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -37,6 +55,9 @@ export function RoomSettingsForm() {
   ])
   const [days, setDays] = useState(3)
   const [roomName, setRoomName] = useState("Trip")
+  const [selectedDate, setSelectedDate] = useState<Date>()
+  const [showCalendar, setShowCalendar] = useState(false)
+
   const router = useRouter()
 
   useEffect(() => {
@@ -53,11 +74,20 @@ export function RoomSettingsForm() {
         setRoomName(currentRoom.name)
         setDays(currentRoom.days)
         setMembers(currentRoom.members)
+        const parsedDate = parse(currentRoom.date, "yyyy/MM/dd", new Date())
+        setSelectedDate(parsedDate)
       }
     } else {
         setIsNewRoom(true)
     }
   }, [])
+
+
+  const handleDayClick = (day: Date) => {
+    setSelectedDate(day)
+    setShowCalendar(false)
+  }
+ 
 
 
   const addMember = () => {
@@ -86,6 +116,11 @@ export function RoomSettingsForm() {
     setIsLoading(true)
 
     // Validate form
+    if (!selectedDate) {
+      toast({ title: "Please select a date", variant: "destructive" })
+      return
+    }
+
     if (members.some((member) => !member.name.trim())) {
       toast({
         title: "Invalid member name",
@@ -104,6 +139,7 @@ export function RoomSettingsForm() {
       days,
       members,
       created: Date.now(),
+      date: format(selectedDate, "yyyy/MM/dd"),
     }
 
     // Save to localStorage
@@ -157,6 +193,24 @@ export function RoomSettingsForm() {
               <Input id="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder= "e.g. trip_pass" required/>
               <p className="text-xs text-gray-500">Keep this password secure</p>
             </div>
+          </div>
+
+          <div className="relative space-y-2">
+            <Label htmlFor="date">Travel Date</Label>
+            <CalendarInput
+              id="date"
+              value={selectedDate ? format(selectedDate, "yyyy/MM/dd") : ""}
+              onClick={() => setShowCalendar(!showCalendar)}
+            />
+            {showCalendar && (
+              <div className="absolute z-10 mt-1 bg-white shadow-lg">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDayClick}
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
